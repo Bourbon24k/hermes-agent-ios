@@ -1,0 +1,57 @@
+# Production stack for the Hermes Mobile relay on a single VPS.
+# Layout expected on the server:
+#   ~/hermes-stack/
+#     ├─ Hermes-iOS/        (git clone of dylan-buck/Hermes-iOS — provides ./relay)
+#     ├─ docker-compose.yml (this file)
+#     ├─ Caddyfile
+#     └─ .env
+#
+# Run from ~/hermes-stack:  docker compose up -d --build
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hermes_mobile
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  relay:
+    build: ./Hermes-iOS/relay
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@postgres:5432/hermes_mobile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      RELAY_DOMAIN: ${RELAY_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - relay
+
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

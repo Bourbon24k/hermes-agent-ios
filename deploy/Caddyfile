@@ -1,0 +1,10 @@
+# Automatic HTTPS (Let's Encrypt) reverse proxy in front of the relay.
+# Requires RELAY_DOMAIN to resolve (A record) to this VPS's public IP.
+{$RELAY_DOMAIN} {
+	encode zstd gzip
+
+	# SSE needs unbuffered, long-lived responses; disable flush buffering.
+	reverse_proxy relay:8000 {
+		flush_interval -1
+	}
+}
