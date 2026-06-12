@@ -1,138 +1,138 @@
 # Hermes Agent — iOS
 
-Native SwiftUI client for [Hermes](https://github.com/dylan-buck/hermes), an AI agent that runs on your computer. The app connects to your Mac over a self-hosted relay, giving you a full chat interface with real-time streaming, tool activity, and extended thinking — right from your iPhone.
+Нативный SwiftUI-клиент для [Hermes](https://github.com/dylan-buck/hermes) — AI-агента, работающего на вашем компьютере. Приложение подключается к Mac через самохостируемый relay и даёт полноценный чат-интерфейс с потоковой передачей ответов в реальном времени, отображением работы инструментов и расширенным мышлением — прямо с iPhone.
 
 ---
 
-## How it works
+## Как это работает
 
 ```
-iPhone App  ──HTTPS──►  Relay (your VPS)  ◄──WS──  Connector  ──►  Hermes Agent (your Mac)
+iPhone  ──HTTPS──►  Relay (ваш VPS)  ◄──WS──  Connector  ──►  Hermes Agent (ваш Mac)
 ```
 
-1. **Relay** — a lightweight FastAPI service you host on any VPS. Issues JWT tokens, queues jobs, and streams SSE events back to the phone.  
-2. **Connector** (`hermes-mobile`) — a Python bridge that runs beside Hermes on your Mac, receives jobs from the relay over WebSocket, and invokes the agent.  
-3. **iOS app** — pairs with the relay via QR code or 8-char pairing code, then talks to the agent through the relay in real time.
+1. **Relay** — лёгкий FastAPI-сервис на вашем VPS. Выдаёт JWT-токены, ставит задачи в очередь и стримит SSE-события на телефон.  
+2. **Connector** (`hermes-mobile`) — Python-мост рядом с Hermes на Mac. Получает задачи от relay через WebSocket и вызывает агента.  
+3. **iOS-приложение** — парится с relay через QR-код или 8-символьный код, после чего общается с агентом через relay в режиме реального времени.
 
 ---
 
-## Features
+## Возможности
 
-- 💬 **Real-time chat** with token-by-token streaming via SSE  
-- 🧠 **Extended thinking** — configurable thinking budget (low / medium / high)  
-- 🔧 **Tool activity feed** — see exactly what the agent is doing in real time  
-- 📷 **Image attachments** — send photos directly to the agent  
-- 🎤 **Voice input** — dictate messages with on-device speech recognition  
-- 📋 **Session history** — browse and revisit past conversations  
-- 🧬 **Memory, Skills, Profiles, Tasks, Insights, Files** — all agent state at a glance  
-- 🔒 **Self-hosted** — your relay, your data; no third-party cloud  
-- 🌑 **Dark mode only** — purpose-built dark UI with a custom design system  
+- 💬 **Чат в реальном времени** — потоковая передача токенов через SSE  
+- 🧠 **Расширенное мышление** — настраиваемый бюджет думания (низкий / средний / высокий)  
+- 🔧 **Лента активности инструментов** — видно, что агент делает прямо сейчас  
+- 📷 **Вложения с фото** — отправляйте изображения прямо в чат  
+- 🎤 **Голосовой ввод** — диктовка сообщений через встроенное распознавание речи  
+- 📋 **История сессий** — просматривайте и возвращайтесь к прошлым разговорам  
+- 🧬 **Память, навыки, профили, задачи, инсайты, файлы** — всё состояние агента под рукой  
+- 🔒 **Self-hosted** — ваш relay, ваши данные; никаких сторонних облаков  
+- 🌑 **Только тёмная тема** — тёмный интерфейс с собственной дизайн-системой  
 
 ---
 
-## Requirements
+## Требования
 
 | | |
 |---|---|
 | iOS | 17.0+ |
 | Xcode | 15+ |
 | Swift | 5.10 |
-| Server | VPS with Docker + Docker Compose |
-| Agent | Hermes 0.16.0+ |
+| Сервер | VPS с Docker + Docker Compose |
+| Агент | Hermes 0.16.0+ |
 
 ---
 
-## Getting started
+## Быстрый старт
 
-### 1. Deploy the relay
+### 1. Задеплойте relay
 
-See [`deploy/RUNBOOK.md`](deploy/RUNBOOK.md) for the full step-by-step. The short version:
+Подробная инструкция — в [`deploy/RUNBOOK.md`](deploy/RUNBOOK.md). Кратко:
 
 ```bash
-# On your VPS
+# На вашем VPS
 mkdir -p ~/hermes-stack && cd ~/hermes-stack
-# copy docker-compose.yml, Caddyfile, .env from the deploy/ folder
-cp .env.template .env   # fill in RELAY_DOMAIN, secrets, etc.
+# скопируйте docker-compose.yml, Caddyfile, .env из папки deploy/
+cp .env.template .env   # заполните RELAY_DOMAIN, секреты и т.д.
 docker compose up -d --build
 ```
 
-The stack: **Relay** (FastAPI) + **Postgres 16** + **Caddy** (auto-TLS).
+Стек: **Relay** (FastAPI) + **Postgres 16** + **Caddy** (авто-TLS).
 
-### 2. Start the connector on your Mac
+### 2. Запустите connector на Mac
 
 ```bash
-pip install hermes-mobile          # or: pip install -e ./connector
-export CONNECTOR_SETUP_SECRET=<from .env>
+pip install hermes-mobile          # или: pip install -e ./connector
+export CONNECTOR_SETUP_SECRET=<из .env>
 hermes-mobile setup --relay-url https://your-relay.example.com/v1
 hermes-mobile service install && hermes-mobile service start
 hermes-mobile status               # → relay connected, host online
 ```
 
-### 3. Build & run the iOS app
+### 3. Соберите iOS-приложение
 
 ```bash
-# Generate the Xcode project (requires XcodeGen)
+# Генерация Xcode-проекта (требуется XcodeGen)
 brew install xcodegen
 xcodegen generate
 
-# Open in Xcode
+# Открыть в Xcode
 open HermesAgent.xcodeproj
 ```
 
-Set your Development Team in Xcode → Signing & Capabilities, then run on your device.
+Укажите свою команду разработчика в Xcode → Signing & Capabilities, затем запустите на устройстве.
 
-### 4. Pair
+### 4. Спарьтесь
 
 ```bash
-# On your Mac
+# На Mac
 hermes-mobile pair-phone
-# Prints:  ABCD-EF23  and a QR code (valid 10 min)
+# Выведет:  ABCD-EF23  и QR-код (действует 10 минут)
 ```
 
-Open the app → scan the QR or enter the relay URL + 8-char code → **Pair**.
+Откройте приложение → отсканируйте QR или введите relay URL + 8-символьный код → **Pair**.
 
 ---
 
-## Project structure
+## Структура проекта
 
 ```
 HermesAgent/
 ├── App/
-│   ├── HermesAgentApp.swift      # Entry point, RootView phase switch
-│   └── AppState.swift            # Global observable state
+│   ├── HermesAgentApp.swift      # Точка входа, переключение фаз RootView
+│   └── AppState.swift            # Глобальное состояние (@Observable)
 ├── API/
-│   ├── RelayClient.swift         # Auth, token refresh, request signing
-│   ├── RelayAPI.swift            # REST endpoints
-│   ├── AgentAPI.swift            # Agent-specific endpoints (sessions, memory…)
-│   ├── SSEClient.swift           # Server-Sent Events streaming
-│   ├── RelayModels.swift         # Codable response types
-│   └── RelaySessionStore.swift   # Keychain persistence
+│   ├── RelayClient.swift         # Авторизация, обновление токенов, подпись запросов
+│   ├── RelayAPI.swift            # REST-эндпоинты
+│   ├── AgentAPI.swift            # Эндпоинты агента (сессии, память…)
+│   ├── SSEClient.swift           # Стриминг Server-Sent Events
+│   ├── RelayModels.swift         # Codable-модели ответов
+│   └── RelaySessionStore.swift   # Хранение сессии в Keychain
 ├── Features/
-│   ├── Chat/                     # Chat UI + streaming view model
-│   ├── Home/                     # Dashboard with menu + recent sessions
-│   ├── Pairing/                  # QR scanner + code entry
-│   └── Sections/                 # Tasks, Skills, Memory, Insights, Profiles, Files, Settings
+│   ├── Chat/                     # UI чата + вью-модель с потоковой передачей
+│   ├── Home/                     # Дашборд с меню и последними сессиями
+│   ├── Pairing/                  # QR-сканер и ввод кода
+│   └── Sections/                 # Задачи, навыки, память, инсайты, профили, файлы, настройки
 └── Theme/
-    └── Theme.swift               # Design tokens (colors, fonts, shapes)
+    └── Theme.swift               # Токены дизайна (цвета, шрифты, формы)
 
 deploy/
-├── docker-compose.yml            # Relay + Postgres + Caddy stack
-├── Caddyfile                     # Reverse proxy + auto-TLS config
-├── hermes-bridge.py              # Connector entry point
-└── RUNBOOK.md                    # Full deploy guide
+├── docker-compose.yml            # Стек Relay + Postgres + Caddy
+├── Caddyfile                     # Конфиг обратного прокси с авто-TLS
+├── hermes-bridge.py              # Точка входа connector'а
+└── RUNBOOK.md                    # Полное руководство по деплою
 ```
 
 ---
 
-## Architecture notes
+## Архитектурные решения
 
-- **`@Observable` + `@Environment`** — state flows top-down; no Combine, no Redux.
-- **SSE streaming** — `ChatViewModel` opens a server-sent-events stream per job and reconciles with the server after completion to guarantee consistency even if events are missed.
-- **Keychain-backed sessions** — pairing tokens survive app reinstalls; `RelayClient` handles JWT refresh automatically.
-- **XcodeGen** — the Xcode project is generated from `project.yml`. Edit `project.yml`, not `.pbxproj`.
+- **`@Observable` + `@Environment`** — состояние течёт сверху вниз; без Combine, без Redux.
+- **SSE-стриминг** — `ChatViewModel` открывает поток server-sent-events для каждой задачи и сверяется с сервером после завершения, чтобы гарантировать консистентность даже при потере событий.
+- **Сессии в Keychain** — токены после спаривания переживают переустановку приложения; `RelayClient` автоматически обновляет JWT.
+- **XcodeGen** — Xcode-проект генерируется из `project.yml`. Правьте `project.yml`, а не `.pbxproj`.
 
 ---
 
-## License
+## Лицензия
 
-Private / proprietary. All rights reserved.
+Приватный / проприетарный проект. Все права защищены.
