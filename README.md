@@ -4,6 +4,18 @@
 
 ---
 
+## Скриншоты
+
+<p align="center">
+  <img src="screenshots/home.png" width="19%" alt="Главная" />
+  <img src="screenshots/tasks.png" width="19%" alt="Задачи" />
+  <img src="screenshots/skills.png" width="19%" alt="Навыки" />
+  <img src="screenshots/files.png" width="19%" alt="Файлы" />
+  <img src="screenshots/insights.png" width="19%" alt="Инсайты" />
+</p>
+
+---
+
 ## Как это работает
 
 ```
