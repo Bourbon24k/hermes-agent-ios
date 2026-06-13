@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
 // MARK: - Slash Command Definition
 
@@ -39,6 +40,7 @@ struct ChatInputBar: View {
     @State private var showThinkingPicker = false
     @State private var showPhotoPicker = false
     @State private var showFilePicker = false
+    @State private var showCamera = false
     @State private var photoPickerItem: PhotosPickerItem?
     @FocusState private var focused: Bool
 
@@ -71,7 +73,10 @@ struct ChatInputBar: View {
             HStack(spacing: 0) {
                 // Attachment / plus menu
                 Menu {
-                    Button { showPhotoPicker = true } label: { Label("Photo", systemImage: "photo") }
+                    if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                        Button { showCamera = true } label: { Label("Take Photo", systemImage: "camera") }
+                    }
+                    Button { showPhotoPicker = true } label: { Label("Photo Library", systemImage: "photo") }
                     Button { showFilePicker = true } label: { Label("File", systemImage: "doc") }
                 } label: {
                     Image(systemName: "plus")
@@ -167,7 +172,21 @@ struct ChatInputBar: View {
                 photoPickerItem = nil
             }
         }
-        .fileImporter(isPresented: $showFilePicker, allowedContentTypes: [.item]) { _ in }
+        .fileImporter(isPresented: $showFilePicker, allowedContentTypes: [.image]) { result in
+            if case .success(let url) = result {
+                let needsScope = url.startAccessingSecurityScopedResource()
+                defer { if needsScope { url.stopAccessingSecurityScopedResource() } }
+                if let data = try? Data(contentsOf: url), let img = UIImage(data: data) {
+                    selectedImage = img
+                }
+            }
+        }
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraPicker { image in
+                if let image { selectedImage = image }
+            }
+            .ignoresSafeArea()
+        }
     }
 
     private var canSend: Bool {

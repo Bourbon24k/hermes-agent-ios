@@ -26,6 +26,7 @@
 		924AB8632B5F3492E3091DD3 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9335589D7E7412A1FBA01072 /* Haptics.swift */; };
 		A25FA963ED195730725D3E95 /* RelayAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A96137930F90F62408887D1 /* RelayAPI.swift */; };
 		A6A016F047468488AA1774F3 /* MemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F74B3D269C3B426B4DD1F1 /* MemoryView.swift */; };
+		AA83668B4989BABD852ED171 /* CameraPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F848E3567275A2515B2297 /* CameraPicker.swift */; };
 		AC6AE45AFC04C2A488DE8912 /* SSEClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFC55D38FE8A6EDA0FD466D7 /* SSEClient.swift */; };
 		B6FD55E763D252C36E9843AD /* CodeBlockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1D930625601CCE422CE0A15 /* CodeBlockView.swift */; };
 		B81170163F73A7D053E44E42 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD79F38A8CC8FB7651538E1B /* SettingsView.swift */; };
@@ -55,6 +56,7 @@
 		53B6247359122B5F8B82EE0B /* ToolActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolActivityView.swift; sourceTree = "<group>"; };
 		5A96137930F90F62408887D1 /* RelayAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayAPI.swift; sourceTree = "<group>"; };
 		62C53045AC838BB2CEF25E4B /* HermesAgentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HermesAgentApp.swift; sourceTree = "<group>"; };
+		65F848E3567275A2515B2297 /* CameraPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraPicker.swift; sourceTree = "<group>"; };
 		67B9AA5AA0BA56A4BF73F444 /* HermesAgent.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = HermesAgent.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		79183F92634A014D79B9A196 /* RelayClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayClient.swift; sourceTree = "<group>"; };
 		79D1494F32831891D1C7C9D0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
@@ -179,6 +181,7 @@
 		DEED7C6A78345C85B98FFDF3 /* Chat */ = {
 			isa = PBXGroup;
 			children = (
+				65F848E3567275A2515B2297 /* CameraPicker.swift */,
 				FDEB2477AE914620304F8DCD /* ChatInputBar.swift */,
 				2E79672FCF45FEC0FF619843 /* ChatView.swift */,
 				4666E5A3BCDDD20185BA3FBD /* ChatViewModel.swift */,
@@ -275,6 +278,7 @@
 			files = (
 				07787851EB250446C80EDE99 /* AgentAPI.swift in Sources */,
 				28910270A37062A6CA6A7A00 /* AppState.swift in Sources */,
+				AA83668B4989BABD852ED171 /* CameraPicker.swift in Sources */,
 				12DCAF98E04467ECBBE44B85 /* ChatInputBar.swift in Sources */,
 				D8EF27BAA6E0C4FA3F01FA41 /* ChatView.swift in Sources */,
 				DBC473FF0B561FE2B76FACF0 /* ChatViewModel.swift in Sources */,
@@ -346,7 +350,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -366,7 +370,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -465,7 +469,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -479,7 +483,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
