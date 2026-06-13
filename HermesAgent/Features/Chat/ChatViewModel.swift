@@ -32,15 +32,31 @@ final class ChatViewModel {
         self.api = api
     }
 
+    /// True once the conversation has been fetched at least once this app run.
+    private var didInitialLoad = false
+
     func load() async {
+        // The view model lives in AppState and survives leaving the chat screen,
+        // so only the FIRST appearance fetches from the server. Re-entering must
+        // never clobber locally-held messages or an in-flight streaming reply.
+        guard !isStreaming else { return }
+        guard !didInitialLoad else { return }
         isLoading = true
         do {
             let conversation = try await api.currentConversation()
             apply(conversation)
+            didInitialLoad = true
         } catch {
             errorText = error.localizedDescription
         }
         isLoading = false
+    }
+
+    /// Force a fresh fetch (pull-to-refresh / explicit reload).
+    func reload() async {
+        guard !isStreaming else { return }
+        didInitialLoad = false
+        await load()
     }
 
     func clear() async {
@@ -52,9 +68,26 @@ final class ChatViewModel {
         }
     }
 
+    /// Resumes a past agent session: the bridge links the current conversation
+    /// to it and copies its transcript, then we reload to show that history.
+    func resume(sessionId: String, agent: AgentAPI) async {
+        isLoading = true
+        do {
+            try await agent.resumeSession(id: sessionId)
+            let conversation = try await api.currentConversation()
+            apply(conversation)
+            Haptics.success()
+        } catch {
+            errorText = error.localizedDescription
+            Haptics.error()
+        }
+        isLoading = false
+    }
+
     private func apply(_ conversation: RelayConversation) {
         conversationTitle = conversation.title ?? "Hermes"
         messages = conversation.messages.map(ChatMessage.init(relay:))
+        didInitialLoad = true
     }
 
     func send(text: String, model: String? = nil, thinking: ThinkingBudget? = nil, image: UIImage? = nil) async {
@@ -63,6 +96,7 @@ final class ChatViewModel {
         errorText = nil
         let clientMessageId = UUID().uuidString
 
+        Haptics.send()
         messages.append(ChatMessage(id: "local-\(clientMessageId)", role: "user", content: content, createdAt: Date()))
         isStreaming = true
         streamingPhase = .connecting
@@ -73,7 +107,21 @@ final class ChatViewModel {
         var attachments: [RelayAPI.AttachmentBody]?
         if let img = image, let jpeg = img.jpegData(compressionQuality: 0.85) {
             let b64 = jpeg.base64EncodedString()
-            attachments = [RelayAPI.AttachmentBody(type: "image", mimeType: "image/jpeg", data: b64, filename: "photo.jpg")]
+            // Small thumbnail so chat history can render the photo (relay strips full data).
+            var thumbB64: String?
+            let maxSide: CGFloat = 280
+            let scale = min(1, maxSide / max(img.size.width, img.size.height))
+            let thumbSize = CGSize(width: img.size.width * scale, height: img.size.height * scale)
+            let renderer = UIGraphicsImageRenderer(size: thumbSize)
+            let thumb = renderer.image { _ in img.draw(in: CGRect(origin: .zero, size: thumbSize)) }
+            if let thumbJpeg = thumb.jpegData(compressionQuality: 0.6) {
+                thumbB64 = thumbJpeg.base64EncodedString()
+            }
+            attachments = [RelayAPI.AttachmentBody(type: "image", mimeType: "image/jpeg", data: b64, filename: "photo.jpg", thumbnailData: thumbB64)]
+            // Show the photo immediately on the local user message echo.
+            if let idx = messages.lastIndex(where: { $0.id == "local-\(clientMessageId)" }) {
+                messages[idx].attachments = [RelayAttachmentMeta(type: "image", filename: "photo.jpg", mimeType: "image/jpeg", thumbnailData: thumbB64)]
+            }
         }
 
         do {
@@ -166,7 +214,16 @@ final class ChatViewModel {
             }
         case "tool_activity":
             if let payload = try? RelayCoders.makeDecoder().decode(StreamProgressPayload.self, from: data) {
-                appendTool(label: payload.label ?? "Tool activity", detail: payload.detail, to: assistantId)
+                if payload.status == "completed", let callId = payload.toolCallId, !callId.isEmpty {
+                    completeTool(callId: callId, detail: payload.detail, in: assistantId)
+                } else {
+                    appendTool(
+                        label: payload.label ?? "Tool activity",
+                        detail: payload.detail,
+                        callId: payload.toolCallId,
+                        to: assistantId
+                    )
+                }
                 streamingPhase = .running
             }
         case "tool_output":
@@ -184,13 +241,17 @@ final class ChatViewModel {
                 if payload.status == "failed" {
                     errorText = payload.error ?? "Run failed"
                     markFailed(assistantId)
+                    Haptics.error()
                 } else if let message = payload.message {
                     finalizeAssistant(assistantId, with: message)
+                    Haptics.success()
                 } else {
                     finalizeStreamingText(assistantId)
+                    Haptics.success()
                 }
             } else {
                 finalizeStreamingText(assistantId)
+                Haptics.success()
             }
             isStreaming = false
         default:
@@ -210,10 +271,25 @@ final class ChatViewModel {
         messages[i].reasoningContent = (messages[i].reasoningContent ?? "") + delta
     }
 
-    private func appendTool(label: String, detail: String? = nil, to id: String) {
+    private func appendTool(label: String, detail: String? = nil, callId: String? = nil, to id: String) {
         guard let i = messages.firstIndex(where: { $0.id == id }) else { return }
-        closeRunningTools(at: i)
-        messages[i].agentEvents.append(AgentEvent(id: UUID().uuidString, title: label, subtitle: nil, detail: detail, status: "running"))
+        Haptics.tap()
+        messages[i].agentEvents.append(AgentEvent(
+            id: (callId?.isEmpty == false ? callId! : UUID().uuidString),
+            title: label, subtitle: nil, detail: detail,
+            status: "running", startedAt: Date()
+        ))
+    }
+
+    private func completeTool(callId: String, detail: String?, in id: String) {
+        guard let i = messages.firstIndex(where: { $0.id == id }) else { return }
+        if let j = messages[i].agentEvents.firstIndex(where: { $0.id == callId }) {
+            messages[i].agentEvents[j].status = "completed"
+            messages[i].agentEvents[j].finishedAt = Date()
+            if let detail, !detail.isEmpty {
+                messages[i].agentEvents[j].detail = detail
+            }
+        }
     }
 
     private func appendToolOutput(output: String, to id: String) {

@@ -31,7 +31,7 @@ struct HomeView: View {
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: Destination.self) { dest in
                 switch dest {
-                case .chat: ChatView(api: appState.api)
+                case .chat: ChatView(viewModel: appState.chatViewModel)
                 case .tasks: TasksView()
                 case .skills: SkillsView()
                 case .memory: MemoryView()
@@ -43,6 +43,10 @@ struct HomeView: View {
                 }
             }
             .navigationDestination(for: AgentSession.self) { SessionDetailView(session: $0) }
+        }
+        .onChange(of: appState.openChatRequest) {
+            path = NavigationPath()
+            path.append(Destination.chat)
         }
         .task { await loadSessions() }
         #if DEBUG
@@ -146,7 +150,6 @@ struct HomeView: View {
             .font(.system(size: 13)).foregroundStyle(Theme.textTertiary)
         }
         .padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading)
-        .overlay(alignment: .bottom) { Divider().overlay(Theme.separator.opacity(0.5)) }
     }
 
     private var chatButton: some View {

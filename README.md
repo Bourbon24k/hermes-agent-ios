@@ -1,5 +1,13 @@
 # Hermes Agent — iOS
 
+<p align="center">
+  <img src="https://img.shields.io/badge/version-1.1.0-F5A623?style=flat-square" alt="Version" />
+  <img src="https://img.shields.io/badge/platform-iOS%2017%2B-000000?style=flat-square&logo=apple" alt="Platform" />
+  <img src="https://img.shields.io/badge/Swift-5.10-FA7343?style=flat-square&logo=swift&logoColor=white" alt="Swift" />
+  <img src="https://img.shields.io/badge/SwiftUI-Observable-0066CC?style=flat-square" alt="SwiftUI" />
+  <img src="https://img.shields.io/badge/install-AltStore-9B59B6?style=flat-square" alt="AltStore" />
+</p>
+
 Нативный SwiftUI-клиент для [Hermes](https://github.com/nousresearch/hermes-agent) — AI-агента, работающего на вашем компьютере. Приложение подключается к Mac через самохостируемый relay и даёт полноценный чат-интерфейс с потоковой передачей ответов в реальном времени, отображением работы инструментов и расширенным мышлением — прямо с iPhone.
 
 ---

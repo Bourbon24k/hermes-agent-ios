@@ -67,6 +67,10 @@ struct CodeBlockView: View {
         let baseColor = UIColor(white: 0.88, alpha: 1)
         result.foregroundColor = baseColor
 
+        // Unlabeled fences are often prose or tool output, not code — highlighting
+        // them mis-colors ordinary words (e.g. "Omsk:" rendered as a type). Render plain.
+        guard let language, !language.isEmpty else { return result }
+
         let keywordColor = UIColor(red: 1.0, green: 0.62, blue: 0.39, alpha: 1)   // Orange
         let stringColor = UIColor(red: 0.6, green: 0.85, blue: 0.55, alpha: 1)    // Green
         let commentColor = UIColor(white: 0.5, alpha: 1)                           // Gray

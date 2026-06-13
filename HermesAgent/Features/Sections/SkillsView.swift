@@ -7,6 +7,7 @@ struct SkillsView: View {
     @State private var errorText: String?
     @State private var search = ""
     @State private var selectedSkill: AgentSkill?
+    @State private var showCreate = false
 
     private var grouped: [(category: String, skills: [AgentSkill])] {
         let filtered = search.isEmpty ? skills : skills.filter {
@@ -62,14 +63,22 @@ struct SkillsView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { Task { await load() } } label: {
-                    Image(systemName: "arrow.clockwise").foregroundStyle(Theme.textSecondary)
+                HStack(spacing: 2) {
+                    Button { Task { await load() } } label: {
+                        Image(systemName: "arrow.clockwise").foregroundStyle(Theme.textSecondary)
+                    }
+                    Button { showCreate = true } label: {
+                        Image(systemName: "plus").foregroundStyle(Theme.accent)
+                    }
                 }
             }
         }
         .task { await load() }
         .sheet(item: $selectedSkill) { skill in
             SkillDetailSheet(skill: skill)
+        }
+        .sheet(isPresented: $showCreate) {
+            CreateSkillSheet { await load() }
         }
     }
 
@@ -239,6 +248,124 @@ struct SkillDetailSheet: View {
             isEditing = false
         } catch {
             errorText = error.localizedDescription
+        }
+        isSaving = false
+    }
+}
+
+
+// MARK: - Create Skill Sheet
+
+struct CreateSkillSheet: View {
+    let onCreated: () async -> Void
+    @Environment(AppState.self) private var appState
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var name = ""
+    @State private var category = "general"
+    @State private var descriptionText = ""
+    @State private var content = ""
+    @State private var isSaving = false
+    @State private var errorText: String?
+
+    private var slug: String {
+        name.lowercased()
+            .replacingOccurrences(of: " ", with: "-")
+            .filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }
+    }
+
+    private var canCreate: Bool {
+        !slug.isEmpty && !descriptionText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Skill") {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Name").font(.system(size: 12)).foregroundStyle(Theme.textTertiary)
+                        TextField("my-skill", text: $name)
+                            .font(.system(size: 16)).foregroundStyle(Theme.textPrimary)
+                            .autocorrectionDisabled().textInputAutocapitalization(.never)
+                    }
+                    .listRowBackground(Theme.card)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Category").font(.system(size: 12)).foregroundStyle(Theme.textTertiary)
+                        TextField("general", text: $category)
+                            .font(.system(size: 16)).foregroundStyle(Theme.textPrimary)
+                            .autocorrectionDisabled().textInputAutocapitalization(.never)
+                    }
+                    .listRowBackground(Theme.card)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Description").font(.system(size: 12)).foregroundStyle(Theme.textTertiary)
+                        TextField("What this skill does", text: $descriptionText, axis: .vertical)
+                            .lineLimit(2...4)
+                            .font(.system(size: 15)).foregroundStyle(Theme.textPrimary)
+                    }
+                    .listRowBackground(Theme.card)
+                }
+
+                Section("Instructions (markdown)") {
+                    TextEditor(text: $content)
+                        .font(Theme.monoFont(13)).foregroundStyle(Theme.textPrimary)
+                        .scrollContentBackground(.hidden)
+                        .frame(minHeight: 160)
+                        .listRowBackground(Theme.card)
+                }
+
+                if let errorText {
+                    Text(errorText).font(.footnote).foregroundStyle(Theme.failure)
+                        .listRowBackground(Theme.background)
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(Theme.background)
+            .navigationTitle("New Skill")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }.foregroundStyle(Theme.textSecondary)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task { await create() }
+                    } label: {
+                        if isSaving {
+                            ProgressView().controlSize(.small).tint(Theme.accent)
+                        } else {
+                            Text("Create").fontWeight(.semibold)
+                                .foregroundStyle(canCreate ? Theme.accent : Theme.textTertiary)
+                        }
+                    }
+                    .disabled(!canCreate || isSaving)
+                }
+            }
+        }
+        .presentationBackground(Theme.background)
+        .presentationDetents([.large])
+    }
+
+    private func create() async {
+        isSaving = true; errorText = nil
+        let cat = category.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "general" : category
+        let body = """
+        ---
+        name: \(slug)
+        description: "\(descriptionText.replacingOccurrences(of: "\"", with: "'"))"
+        ---
+
+        \(content.isEmpty ? "# \(name)\n\nInstructions for the agent." : content)
+        """
+        do {
+            try await appState.agent.saveFileContent(path: ".hermes/skills/\(cat)/\(slug)/SKILL.md", content: body)
+            Haptics.success()
+            await onCreated()
+            dismiss()
+        } catch {
+            errorText = error.localizedDescription
+            Haptics.error()
         }
         isSaving = false
     }

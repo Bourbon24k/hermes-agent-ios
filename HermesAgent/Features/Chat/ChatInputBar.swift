@@ -12,15 +12,16 @@ struct SlashCommand: Identifiable {
 }
 
 private let kSlashCommands: [SlashCommand] = [
-    SlashCommand(id: "reset",    icon: "square.and.pencil",   title: "/reset",          detail: "Start a new conversation",       completion: "/reset"),
-    SlashCommand(id: "model",    icon: "cpu",                  title: "/model",          detail: "Switch AI model",                completion: "/model "),
-    SlashCommand(id: "think",    icon: "sparkles",             title: "/think",          detail: "Set thinking level: off/low/medium/high", completion: "/think "),
-    SlashCommand(id: "memory",   icon: "brain",                title: "/memory",         detail: "Show agent memory",              completion: "/memory"),
-    SlashCommand(id: "sessions", icon: "clock",                title: "/sessions",       detail: "Browse past sessions",           completion: "/sessions"),
-    SlashCommand(id: "tasks",    icon: "calendar.badge.clock", title: "/tasks",          detail: "Show scheduled tasks",           completion: "/tasks"),
-    SlashCommand(id: "skills",   icon: "hammer.fill",          title: "/skills",         detail: "List available skills",          completion: "/skills"),
-    SlashCommand(id: "clear",    icon: "trash",                title: "/clear",          detail: "Clear and archive conversation", completion: "/clear"),
-    SlashCommand(id: "help",     icon: "questionmark.circle",  title: "/help",           detail: "Show available commands",        completion: "/help"),
+    SlashCommand(id: "reset",    icon: "square.and.pencil",   title: "/reset",    detail: "Start a new conversation",       completion: "/reset"),
+    SlashCommand(id: "model",    icon: "cpu",                  title: "/model",    detail: "Switch AI model",                completion: "/model"),
+    SlashCommand(id: "think",    icon: "sparkles",             title: "/think",    detail: "Set reasoning level",            completion: "/think"),
+    SlashCommand(id: "memory",   icon: "brain",                title: "/memory",   detail: "View & edit agent memory",       completion: "/memory"),
+    SlashCommand(id: "sessions", icon: "clock",                title: "/sessions", detail: "Browse past sessions",           completion: "/sessions"),
+    SlashCommand(id: "tasks",    icon: "calendar.badge.clock", title: "/tasks",    detail: "Scheduled tasks",                completion: "/tasks"),
+    SlashCommand(id: "skills",   icon: "hammer.fill",          title: "/skills",   detail: "Available skills",               completion: "/skills"),
+    SlashCommand(id: "files",    icon: "folder",               title: "/files",    detail: "Browse agent files",             completion: "/files"),
+    SlashCommand(id: "clear",    icon: "trash",                title: "/clear",    detail: "Clear and archive conversation", completion: "/clear"),
+    SlashCommand(id: "help",     icon: "questionmark.circle",  title: "/help",     detail: "Show available commands",        completion: "/help"),
 ]
 
 struct ChatInputBar: View {
@@ -170,7 +171,7 @@ struct ChatInputBar: View {
     }
 
     private var canSend: Bool {
-        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || selectedImage != nil
     }
 
     private var slashSuggestionsPanel: some View {
@@ -212,26 +213,27 @@ struct ChatInputBar: View {
     }
 
     private func applyCommand(_ cmd: SlashCommand) {
-        // Commands that execute immediately without text submission
-        let immediate = ["reset", "memory", "sessions", "tasks", "skills", "help", "clear"]
-        if immediate.contains(cmd.id) {
-            text = ""
+        Haptics.selection()
+        text = ""
+        switch cmd.id {
+        case "model":
+            showModelPicker = true
+        case "think":
+            showThinkingPicker = true
+        default:
             onCommand?(cmd.id)
-        } else {
-            // Partial: fill the text field with the completion for the user to finish
-            text = cmd.completion
         }
     }
 
     private func shortModelName(_ model: String) -> String {
-        // "claude-sonnet-4-6" → "Sonnet 4.6"
-        let parts = model.split(separator: "-")
-        if parts.count >= 3, let first = parts.dropFirst().first {
-            let name = first.capitalized
-            let ver = parts.dropFirst(2).joined(separator: ".")
-            return "\(name) \(ver)"
+        // "anthropic/claude-sonnet-4.6" → "Claude Sonnet 4.6"
+        // "nvidia/nemotron-3-super-120b-a12b" → "Nemotron 3 Super"
+        let raw = model.split(separator: "/").last.map(String.init) ?? model
+        let words = raw.split(separator: "-").map(String.init)
+        let pretty = words.prefix(3).map { w in
+            w.first.map { String($0).uppercased() + w.dropFirst() } ?? w
         }
-        return model
+        return pretty.joined(separator: " ")
     }
 }
 
@@ -241,23 +243,28 @@ struct ModelPickerSheet: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
     @State private var search = ""
+    @State private var models: [AgentModel] = []
+    @State private var currentModel: String?
+    @State private var isLoading = true
+    @State private var switchingId: String?
+    @State private var errorText: String?
 
-    private let models: [(id: String, name: String, subtitle: String)] = [
-        ("claude-opus-4-8",    "Claude Opus 4.8",    "@claude-opus-4-8"),
-        ("claude-sonnet-4-6",  "Claude Sonnet 4.6",  "@claude-sonnet-4-6"),
-        ("claude-haiku-4-5",   "Claude Haiku 4.5",   "@claude-haiku-4-5"),
-        ("claude-opus-4-5",    "Claude Opus 4.5",    "@claude-opus-4-5"),
-        ("claude-sonnet-4-5",  "Claude Sonnet 4.5",  "@claude-sonnet-4-5"),
-        ("claude-opus-4-7",    "Claude Opus 4.7",    "@claude-opus-4-7"),
-        ("deepseek-v3",        "DeepSeek V3",        "@deepseek-v3"),
-        ("gpt-4o",             "GPT-4o",             "@openai-gpt-4o"),
-    ]
-
-    private var filtered: [(id: String, name: String, subtitle: String)] {
+    private var filtered: [AgentModel] {
         search.isEmpty ? models : models.filter {
-            $0.name.localizedCaseInsensitiveContains(search) ||
+            $0.displayName.localizedCaseInsensitiveContains(search) ||
             $0.id.localizedCaseInsensitiveContains(search)
         }
+    }
+
+    /// Models grouped by provider, current provider's group first.
+    private var groupedByProvider: [(provider: String, models: [AgentModel])] {
+        let groups = Dictionary(grouping: filtered) { $0.provider ?? "other" }
+        let currentProv = models.first(where: { $0.id == currentModel })?.provider
+        return groups.sorted { a, b in
+            if a.key == currentProv { return true }
+            if b.key == currentProv { return false }
+            return a.key < b.key
+        }.map { ($0.key, $0.value) }
     }
 
     var body: some View {
@@ -268,45 +275,38 @@ struct ModelPickerSheet: View {
                     Image(systemName: "magnifyingglass").foregroundStyle(Theme.textTertiary)
                     TextField("Search models", text: $search)
                         .foregroundStyle(Theme.textPrimary).tint(Theme.accent)
+                        .autocorrectionDisabled().textInputAutocapitalization(.never)
                 }
                 .padding(.horizontal, 14).padding(.vertical, 10)
                 .background(Theme.surfaceElevated, in: RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 4)
 
-                List {
-                    ForEach(filtered, id: \.id) { model in
-                        Button {
-                            appState.selectedModel = model.id
-                            dismiss()
-                        } label: {
-                            HStack(spacing: 14) {
-                                Circle()
-                                    .strokeBorder(appState.selectedModel == model.id ? Theme.accent : Theme.separator, lineWidth: 2)
-                                    .background(Circle().fill(appState.selectedModel == model.id ? Theme.accent.opacity(0.15) : Color.clear))
-                                    .frame(width: 22, height: 22)
-                                    .overlay {
-                                        if appState.selectedModel == model.id {
-                                            Circle().fill(Theme.accent).frame(width: 10, height: 10)
-                                        }
-                                    }
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(model.name)
-                                        .font(.system(size: 16, weight: .semibold))
-                                        .foregroundStyle(Theme.textPrimary)
-                                    Text(model.subtitle)
-                                        .font(Theme.monoFont(12))
-                                        .foregroundStyle(Theme.textTertiary)
-                                }
-                                Spacer()
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .listRowBackground(Theme.card)
-                    }
+                if let errorText {
+                    Text(errorText)
+                        .font(.footnote).foregroundStyle(Theme.failure)
+                        .padding(.horizontal, 16).padding(.vertical, 6)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .listStyle(.insetGrouped)
-                .scrollContentBackground(.hidden)
+
+                if isLoading {
+                    ProgressView().tint(Theme.accent).frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List {
+                        ForEach(groupedByProvider, id: \.provider) { group in
+                            Section {
+                                ForEach(group.models) { model in
+                                    modelRow(model)
+                                }
+                            } header: {
+                                Text(group.provider.uppercased())
+                                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                    .foregroundStyle(Theme.textTertiary)
+                            }
+                        }
+                    }
+                    .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
+                }
             }
             .background(Theme.background)
             .navigationTitle("Choose Model")
@@ -319,6 +319,81 @@ struct ModelPickerSheet: View {
         }
         .presentationBackground(Theme.background)
         .presentationDetents([.medium, .large])
+        .task { await load() }
+    }
+
+    private func modelRow(_ model: AgentModel) -> some View {
+        let isSelected = currentModel == model.id
+        return Button {
+            Task { await select(model) }
+        } label: {
+            HStack(spacing: 14) {
+                Circle()
+                    .strokeBorder(isSelected ? Theme.accent : Theme.separator, lineWidth: 2)
+                    .background(Circle().fill(isSelected ? Theme.accent.opacity(0.15) : Color.clear))
+                    .frame(width: 22, height: 22)
+                    .overlay {
+                        if isSelected {
+                            Circle().fill(Theme.accent).frame(width: 10, height: 10)
+                        }
+                    }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(model.displayName)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                    HStack(spacing: 6) {
+                        Text(model.id)
+                            .font(Theme.monoFont(12))
+                            .foregroundStyle(Theme.textTertiary)
+                            .lineLimit(1)
+                        if let provider = model.provider {
+                            Text(provider)
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundStyle(Theme.accent)
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(Theme.accent.opacity(0.12), in: Capsule())
+                        }
+                    }
+                }
+                Spacer()
+                if switchingId == model.id {
+                    ProgressView().controlSize(.small).tint(Theme.accent)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(switchingId != nil)
+        .listRowBackground(Theme.card)
+    }
+
+    private func load() async {
+        isLoading = true; errorText = nil
+        do {
+            let resp = try await appState.agent.models()
+            models = resp.models
+            currentModel = resp.current.model
+            if let m = resp.current.model { appState.selectedModel = m }
+        } catch {
+            errorText = error.localizedDescription
+        }
+        isLoading = false
+    }
+
+    private func select(_ model: AgentModel) async {
+        guard model.id != currentModel else { dismiss(); return }
+        switchingId = model.id; errorText = nil
+        do {
+            try await appState.agent.setModel(model.id, provider: model.provider)
+            currentModel = model.id
+            appState.selectedModel = model.id
+            Haptics.success()
+            dismiss()
+        } catch {
+            errorText = error.localizedDescription
+            Haptics.error()
+        }
+        switchingId = nil
     }
 }
 
@@ -327,14 +402,21 @@ struct ModelPickerSheet: View {
 struct ThinkingPickerSheet: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
+    @State private var savingBudget: ThinkingBudget?
 
     var body: some View {
         NavigationStack {
             List {
                 ForEach(ThinkingBudget.allCases) { budget in
                     Button {
-                        appState.thinkingBudget = budget
-                        dismiss()
+                        savingBudget = budget
+                        Task {
+                            // Apply to the agent host (agent.reasoning_effort); keep local copy regardless.
+                            try? await appState.agent.setReasoning(budget.rawValue)
+                            appState.thinkingBudget = budget
+                            savingBudget = nil
+                            dismiss()
+                        }
                     } label: {
                         HStack(spacing: 14) {
                             Circle()
@@ -365,10 +447,14 @@ struct ThinkingPickerSheet: View {
                                 }
                             }
                             Spacer()
+                            if savingBudget == budget {
+                                ProgressView().controlSize(.small).tint(Theme.accent)
+                            }
                         }
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .disabled(savingBudget != nil)
                     .listRowBackground(Theme.card)
                 }
             }

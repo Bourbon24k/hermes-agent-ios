@@ -100,6 +100,7 @@ struct RelayAPI: Sendable {
         let mimeType: String
         let data: String
         let filename: String
+        var thumbnailData: String? = nil
     }
 
     struct SendBody: Encodable {

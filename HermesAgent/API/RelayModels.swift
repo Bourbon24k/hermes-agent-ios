@@ -136,6 +136,8 @@ struct StreamProgressPayload: Decodable {
     let detail: String?
     let command: String?
     let output: String?
+    let status: String?
+    let toolCallId: String?
 }
 
 // MARK: - UI models (decoupled from transport)
@@ -146,9 +148,18 @@ struct AgentEvent: Identifiable, Hashable {
     var subtitle: String?
     var detail: String?
     var status: String   // "running" | "completed" | "failed"
+    var startedAt: Date? = nil
+    var finishedAt: Date? = nil
 
     var isRunning: Bool { status == "running" }
     var isFailed: Bool { status == "failed" || status == "error" }
+
+    var durationText: String? {
+        guard let startedAt, let finishedAt else { return nil }
+        let s = finishedAt.timeIntervalSince(startedAt)
+        if s < 1 { return String(format: "%.0fms", s * 1000) }
+        return String(format: "%.1fs", s)
+    }
 }
 
 struct ChatMessage: Identifiable, Hashable {

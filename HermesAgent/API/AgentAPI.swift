@@ -91,6 +91,12 @@ struct AgentProfile: Decodable, Identifiable, Hashable {
     var id: String { name }
 }
 
+struct AgentProfileDetails: Decodable, Hashable {
+    let name: String
+    let details: String?
+    let ok: Bool?
+}
+
 struct AgentMemory: Decodable, Hashable {
     let memory: String?
     let user: String?
@@ -120,6 +126,33 @@ struct AgentStatus: Decodable, Hashable {
     let hermesVersion: String?
 }
 
+struct AgentModel: Decodable, Identifiable, Hashable {
+    let id: String
+    let provider: String?
+
+    /// "anthropic/claude-sonnet-4.6" → "Claude Sonnet 4.6"
+    var displayName: String {
+        let raw = id.split(separator: "/").last.map(String.init) ?? id
+        return raw
+            .split(separator: "-")
+            .map { part in
+                let s = String(part)
+                return s.first.map { String($0).uppercased() + s.dropFirst() } ?? s
+            }
+            .joined(separator: " ")
+    }
+}
+
+struct AgentModelsResponse: Decodable, Hashable {
+    struct Current: Decodable, Hashable {
+        let model: String?
+        let provider: String?
+        let reasoningEffort: String?
+    }
+    let models: [AgentModel]
+    let current: Current
+}
+
 /// Typed access to the self-hosted hermes-bridge (/agent/*).
 struct AgentAPI: Sendable {
     let client: RelayClient
@@ -134,6 +167,23 @@ struct AgentAPI: Sendable {
         struct W: Decodable { let messages: [AgentSessionMessage] }
         let w: W = try await client.agentGet("/agent/sessions/\(sessionId)/messages")
         return w.messages
+    }
+
+    /// Links the current conversation to a past session and repopulates it.
+    func resumeSession(id: String) async throws {
+        struct Resp: Decodable { let ok: Bool? }
+        let _: Resp = try await client.agentPost("/agent/sessions/\(id)/resume", body: Optional<RelayClient.Empty>.none)
+    }
+
+    func deleteSession(id: String) async throws {
+        struct Resp: Decodable { let ok: Bool? }
+        let _: Resp = try await client.agentDelete("/agent/sessions/\(id)")
+    }
+
+    func renameSession(id: String, title: String) async throws {
+        struct Body: Encodable { let title: String }
+        struct Resp: Decodable { let ok: Bool? }
+        let _: Resp = try await client.agentPost("/agent/sessions/\(id)/rename", body: Body(title: title))
     }
 
     func cron() async throws -> [AgentCronJob] {
@@ -203,5 +253,56 @@ struct AgentAPI: Sendable {
 
     func useProfile(name: String) async throws {
         let _: RelayClient.Empty = try await client.agentPost("/agent/profiles/\(name)/use", body: Optional<RelayClient.Empty>.none)
+    }
+
+    func createProfile(name: String, description: String?) async throws {
+        struct Body: Encodable { let name: String; let description: String? }
+        struct Resp: Decodable { let ok: Bool? }
+        let _: Resp = try await client.agentPost("/agent/profiles", body: Body(name: name, description: description))
+    }
+
+    func deleteProfile(name: String) async throws {
+        struct Resp: Decodable { let ok: Bool? }
+        let _: Resp = try await client.agentPost("/agent/profiles/\(name)/delete", body: Optional<RelayClient.Empty>.none)
+    }
+
+    func renameProfile(_ old: String, to new: String) async throws {
+        struct Body: Encodable { let name: String }
+        struct Resp: Decodable { let ok: Bool? }
+        let _: Resp = try await client.agentPost("/agent/profiles/\(old)/rename", body: Body(name: new))
+    }
+
+    func profileDetails(name: String) async throws -> AgentProfileDetails {
+        try await client.agentGet("/agent/profiles/\(name)")
+    }
+
+    /// Fetches the system prompt from ~/.hermes/SYSTEM.md
+    func systemPrompt() async throws -> String {
+        let result = try await fileContent(path: "~/.hermes/SYSTEM.md")
+        return result.content ?? ""
+    }
+
+    /// Saves the system prompt
+    func saveSystemPrompt(_ content: String) async throws {
+        try await saveFileContent(path: "~/.hermes/SYSTEM.md", content: content)
+    }
+
+    /// Available models + current selection from the agent host.
+    func models() async throws -> AgentModelsResponse {
+        try await client.agentGet("/agent/models")
+    }
+
+    /// Switches the agent's default model globally (applies to new sessions).
+    func setModel(_ model: String, provider: String?) async throws {
+        struct Body: Encodable { let model: String; let provider: String? }
+        struct Resp: Decodable { let ok: Bool? }
+        let _: Resp = try await client.agentPost("/agent/model", body: Body(model: model, provider: provider))
+    }
+
+    /// Sets agent.reasoning_effort (off/low/medium/high).
+    func setReasoning(_ level: String) async throws {
+        struct Body: Encodable { let level: String }
+        struct Resp: Decodable { let ok: Bool? }
+        let _: Resp = try await client.agentPost("/agent/reasoning", body: Body(level: level))
     }
 }

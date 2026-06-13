@@ -155,6 +155,10 @@ actor RelayClient {
         try await agentRequest(method: "PUT", path: path, body: body)
     }
 
+    func agentDelete<T: Decodable>(_ path: String) async throws -> T {
+        try await agentRequest(method: "DELETE", path: path, body: Optional<Empty>.none)
+    }
+
     private func agentRequest<T: Decodable, B: Encodable>(
         method: String, path: String, body: B?, retryOnAuth: Bool = true
     ) async throws -> T {

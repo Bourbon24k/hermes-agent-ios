@@ -2,9 +2,12 @@ import SwiftUI
 import UIKit
 
 struct MessageView: View {
+    @Environment(AppState.self) private var appState
     let message: ChatMessage
     var isStreaming: Bool = false
     var streamingPhase: StreamingPhase = .idle
+
+    private var bodySize: CGFloat { appState.chatTextSize.pointSize }
 
     var body: some View {
         if message.role == "user" {
@@ -17,18 +20,51 @@ struct MessageView: View {
     private var userBubble: some View {
         HStack {
             Spacer(minLength: 48)
-            Text(message.content)
-                .font(.system(size: 16))
-                .foregroundStyle(Theme.textPrimary)
-                .textSelection(.enabled)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 11)
-                .background(Theme.userBubble, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .contextMenu {
-                    Button { UIPasteboard.general.string = message.content } label: {
-                        Label("Copy", systemImage: "doc.on.doc")
-                    }
+            VStack(alignment: .trailing, spacing: 6) {
+                ForEach(Array(message.attachments.enumerated()), id: \.offset) { _, att in
+                    attachmentView(att)
                 }
+                if !message.content.isEmpty {
+                    Text(message.content)
+                        .font(.system(size: bodySize))
+                        .foregroundStyle(Theme.textPrimary)
+                        .textSelection(.enabled)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 11)
+                        .background(Theme.userBubble, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .contextMenu {
+                            Button { UIPasteboard.general.string = message.content } label: {
+                                Label("Copy", systemImage: "doc.on.doc")
+                            }
+                        }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func attachmentView(_ att: RelayAttachmentMeta) -> some View {
+        if let thumbB64 = att.thumbnailData,
+           let data = Data(base64Encoded: thumbB64),
+           let img = UIImage(data: data) {
+            Image(uiImage: img)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: 220, maxHeight: 220)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        } else {
+            HStack(spacing: 8) {
+                Image(systemName: att.type == "image" ? "photo" : "doc")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Theme.accent)
+                Text(att.filename ?? "attachment")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Theme.textSecondary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(Theme.surfaceElevated, in: RoundedRectangle(cornerRadius: 12))
         }
     }
 
@@ -69,7 +105,7 @@ struct MessageView: View {
             }
 
             // Timestamp + copy row (only rendered when there is something to show)
-            let hasDate = message.createdAt != nil
+            let hasDate = message.createdAt != nil && appState.showTimestamps
             let hasCopy = !message.content.isEmpty && !isStreaming
             if hasDate || hasCopy {
                 HStack(spacing: 10) {
@@ -99,7 +135,7 @@ struct MessageView: View {
 
     private func streamingText(_ content: String, isLast: Bool) -> some View {
         Text(.hermesMarkdown(content))
-            .font(.system(size: 16))
+            .font(.system(size: bodySize))
             .foregroundStyle(Theme.textPrimary)
             .textSelection(.enabled)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -143,7 +179,7 @@ struct MessageView: View {
                             .frame(width: 16, alignment: .center)
                     }
                     Text(.hermesMarkdown(item.content))
-                        .font(.system(size: 16))
+                        .font(.system(size: bodySize))
                         .foregroundStyle(Theme.textPrimary)
                         .textSelection(.enabled)
                         .frame(maxWidth: .infinity, alignment: .leading)

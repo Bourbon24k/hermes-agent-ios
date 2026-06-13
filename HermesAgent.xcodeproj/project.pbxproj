@@ -23,6 +23,7 @@
 		87BC02E48468DC2C43BB6F75 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2264181E464CF084FBAD1A7D /* HomeView.swift */; };
 		87C790AF01E121288141A5D1 /* JSONValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 454628B1D0A39690A0A581B1 /* JSONValue.swift */; };
 		920498B77C02A2906AA5FE3F /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C756CFF6641F82BACAC46DC4 /* InsightsView.swift */; };
+		924AB8632B5F3492E3091DD3 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9335589D7E7412A1FBA01072 /* Haptics.swift */; };
 		A25FA963ED195730725D3E95 /* RelayAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A96137930F90F62408887D1 /* RelayAPI.swift */; };
 		A6A016F047468488AA1774F3 /* MemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9F74B3D269C3B426B4DD1F1 /* MemoryView.swift */; };
 		AC6AE45AFC04C2A488DE8912 /* SSEClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFC55D38FE8A6EDA0FD466D7 /* SSEClient.swift */; };
@@ -57,6 +58,7 @@
 		79183F92634A014D79B9A196 /* RelayClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayClient.swift; sourceTree = "<group>"; };
 		79D1494F32831891D1C7C9D0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		8132BA34AACD4750D00E5D06 /* MarkdownBlocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownBlocks.swift; sourceTree = "<group>"; };
+		9335589D7E7412A1FBA01072 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		9D1F7A9C8F7BECB3E3EE9A41 /* SessionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsView.swift; sourceTree = "<group>"; };
 		A2173C82211A546129BE62D2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A8975CD365FE638299FFC73E /* ProfilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilesView.swift; sourceTree = "<group>"; };
@@ -191,6 +193,7 @@
 			children = (
 				CFFFBB69773461E7991979FD /* AppState.swift */,
 				EDC32A1A0A92DB91A1EF32D3 /* DebugLogin.swift */,
+				9335589D7E7412A1FBA01072 /* Haptics.swift */,
 				62C53045AC838BB2CEF25E4B /* HermesAgentApp.swift */,
 			);
 			path = App;
@@ -276,6 +279,7 @@
 				3D0B3E4F3A80CC66809F4C15 /* DebugLogin.swift in Sources */,
 				DF11E4E2AE870F91A2A340DC /* DictationManager.swift in Sources */,
 				43EF89C7C023A872C02ECADD /* FilesView.swift in Sources */,
+				924AB8632B5F3492E3091DD3 /* Haptics.swift in Sources */,
 				8678A75B67EE56664DA171B6 /* HermesAgentApp.swift in Sources */,
 				87BC02E48468DC2C43BB6F75 /* HomeView.swift in Sources */,
 				920498B77C02A2906AA5FE3F /* InsightsView.swift in Sources */,
@@ -338,7 +342,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -358,7 +362,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -457,7 +461,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -471,7 +475,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

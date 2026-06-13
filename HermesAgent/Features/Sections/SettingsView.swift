@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var agentStatus: AgentStatus?
     @State private var isLoading = true
     @State private var showUnpairConfirm = false
+    @State private var systemPromptPreview: String = "..."
 
     var body: some View {
         @Bindable var appState = appState
@@ -61,6 +62,66 @@ struct SettingsView: View {
                 .listRowBackground(Theme.card)
             }
 
+            Section("App") {
+                Toggle(isOn: Bindable(appState).hapticsEnabled) {
+                    Text("Haptic feedback").foregroundStyle(Theme.textPrimary)
+                }
+                .tint(Theme.accent)
+                .listRowBackground(Theme.card)
+
+                HStack {
+                    Text("Chat text size").foregroundStyle(Theme.textPrimary)
+                    Spacer()
+                    Picker("", selection: Bindable(appState).chatTextSize) {
+                        ForEach(AppState.ChatTextSize.allCases) { size in
+                            Text(size.displayName).tag(size)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .tint(Theme.accent)
+                }
+                .listRowBackground(Theme.card)
+
+                Toggle(isOn: Bindable(appState).showTimestamps) {
+                    Text("Message timestamps").foregroundStyle(Theme.textPrimary)
+                }
+                .tint(Theme.accent)
+                .listRowBackground(Theme.card)
+
+                Toggle(isOn: Bindable(appState).autoExpandThinking) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Auto-expand thinking").foregroundStyle(Theme.textPrimary)
+                        Text("Open the reasoning block while the agent thinks")
+                            .font(.system(size: 12)).foregroundStyle(Theme.textTertiary)
+                    }
+                }
+                .tint(Theme.accent)
+                .listRowBackground(Theme.card)
+
+                Toggle(isOn: Bindable(appState).confirmNewChat) {
+                    Text("Confirm new conversation").foregroundStyle(Theme.textPrimary)
+                }
+                .tint(Theme.accent)
+                .listRowBackground(Theme.card)
+            }
+
+            // System Prompt
+            Section("System Prompt") {
+                NavigationLink {
+                    SystemPromptEditor(agent: appState.agent)
+                } label: {
+                    HStack {
+                        Text("SYSTEM.md").foregroundStyle(Theme.textPrimary)
+                        Spacer()
+                        Text(systemPromptPreview)
+                            .font(.system(size: 12))
+                            .foregroundStyle(Theme.textTertiary)
+                            .lineLimit(1)
+                    }
+                }
+            }
+            .listRowBackground(Theme.card)
+
             // Agent info
             Section("Agent") {
                 if let version = agentStatus?.hermesVersion {
@@ -94,8 +155,11 @@ struct SettingsView: View {
         .task { [api = appState.api, agent = appState.agent] in
             async let s = try? api.session()
             async let a = try? agent.status()
+            async let sp = try? agent.systemPrompt()
             status = await s
             agentStatus = await a
+            let prompt = await sp
+            systemPromptPreview = prompt.flatMap { $0.isEmpty ? "Not set" : String($0.prefix(50)) } ?? "Not set"
             isLoading = false
         }
     }
@@ -137,5 +201,65 @@ struct SettingsView: View {
         let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
         let b = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
         return "\(v) (\(b))"
+    }
+}
+
+// MARK: - System Prompt Editor
+
+struct SystemPromptEditor: View {
+    let agent: AgentAPI
+    @Environment(\.dismiss) private var dismiss
+    @State private var content = ""
+    @State private var isLoading = true
+    @State private var isSaving = false
+    @State private var errorText: String?
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if isLoading {
+                ProgressView().tint(Theme.accent).frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                TextEditor(text: $content)
+                    .font(Theme.monoFont(13))
+                    .foregroundStyle(Theme.textPrimary)
+                    .scrollContentBackground(.hidden)
+                    .background(Theme.background)
+                    .tint(Theme.accent)
+                    .padding(.horizontal, 12)
+            }
+            if let errorText {
+                Text(errorText).font(.footnote).foregroundStyle(Theme.failure).padding()
+            }
+        }
+        .background(Theme.background)
+        .navigationTitle("System Prompt")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    Task { await save() }
+                } label: {
+                    if isSaving {
+                        ProgressView().controlSize(.small).tint(Theme.accent)
+                    } else {
+                        Text("Save").foregroundStyle(Theme.accent).fontWeight(.semibold)
+                    }
+                }
+                .disabled(isSaving)
+            }
+        }
+        .task { await load() }
+    }
+
+    private func load() async {
+        isLoading = true
+        do { content = try await agent.systemPrompt() } catch { errorText = error.localizedDescription }
+        isLoading = false
+    }
+
+    private func save() async {
+        isSaving = true; errorText = nil
+        do { try await agent.saveSystemPrompt(content); dismiss() } catch { errorText = error.localizedDescription }
+        isSaving = false
     }
 }
