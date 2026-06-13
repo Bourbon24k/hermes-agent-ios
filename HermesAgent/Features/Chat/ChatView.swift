@@ -64,12 +64,6 @@ struct ChatView: View {
             .padding(.top, 6)
             .background(Theme.background)
         }
-        .overlay(alignment: .top) {
-            if viewModel.isStreaming {
-                StreamStatusPill(phase: viewModel.streamingPhase)
-                    .padding(.top, 6)
-            }
-        }
         .background(Theme.background)
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
@@ -282,43 +276,3 @@ struct CommandHelpSheet: View {
     }
 }
 
-// MARK: - Stream status pill (static, near the Dynamic Island)
-
-struct StreamStatusPill: View {
-    let phase: StreamingPhase
-
-    private var label: String {
-        switch phase {
-        case .idle: return "Working…"
-        case .connecting: return "Connecting…"
-        case .thinking: return "Thinking…"
-        case .running: return "Working…"
-        case .writing: return "Generating…"
-        }
-    }
-
-    private var icon: String {
-        switch phase {
-        case .thinking: return "sparkles"
-        case .running: return "gearshape.fill"
-        case .writing: return "text.cursor"
-        default: return "circle.dotted"
-        }
-    }
-
-    var body: some View {
-        HStack(spacing: 7) {
-            Image(systemName: icon)
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Theme.accent)
-            Text(label)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Theme.textPrimary)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(Capsule().strokeBorder(Theme.separator, lineWidth: 1))
-        .shadow(color: .black.opacity(0.3), radius: 8, y: 2)
-    }
-}

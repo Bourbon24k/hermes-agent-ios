@@ -39,6 +39,7 @@
 		F01DAAFF44D6921BA440B901 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79D1494F32831891D1C7C9D0 /* Theme.swift */; };
 		F5611321DCCFC7814F743A16 /* SessionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D1F7A9C8F7BECB3E3EE9A41 /* SessionsView.swift */; };
 		FA570A9D87A1B3BA6F52CA61 /* RelaySessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF2B6E1D9C008928E1809CB5 /* RelaySessionStore.swift */; };
+		FCCF6C488D7BF3D3C6A6FCF9 /* DynamicIslandBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94D5336D39FB9F3F5C0F1528 /* DynamicIslandBadge.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -59,6 +60,7 @@
 		79D1494F32831891D1C7C9D0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		8132BA34AACD4750D00E5D06 /* MarkdownBlocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownBlocks.swift; sourceTree = "<group>"; };
 		9335589D7E7412A1FBA01072 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
+		94D5336D39FB9F3F5C0F1528 /* DynamicIslandBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIslandBadge.swift; sourceTree = "<group>"; };
 		9D1F7A9C8F7BECB3E3EE9A41 /* SessionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsView.swift; sourceTree = "<group>"; };
 		A2173C82211A546129BE62D2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		A8975CD365FE638299FFC73E /* ProfilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfilesView.swift; sourceTree = "<group>"; };
@@ -168,6 +170,7 @@
 		C5D3366644DA5127D15A7C8F /* Home */ = {
 			isa = PBXGroup;
 			children = (
+				94D5336D39FB9F3F5C0F1528 /* DynamicIslandBadge.swift */,
 				2264181E464CF084FBAD1A7D /* HomeView.swift */,
 			);
 			path = Home;
@@ -278,6 +281,7 @@
 				B6FD55E763D252C36E9843AD /* CodeBlockView.swift in Sources */,
 				3D0B3E4F3A80CC66809F4C15 /* DebugLogin.swift in Sources */,
 				DF11E4E2AE870F91A2A340DC /* DictationManager.swift in Sources */,
+				FCCF6C488D7BF3D3C6A6FCF9 /* DynamicIslandBadge.swift in Sources */,
 				43EF89C7C023A872C02ECADD /* FilesView.swift in Sources */,
 				924AB8632B5F3492E3091DD3 /* Haptics.swift in Sources */,
 				8678A75B67EE56664DA171B6 /* HermesAgentApp.swift in Sources */,

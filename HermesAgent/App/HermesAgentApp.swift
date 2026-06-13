@@ -10,6 +10,7 @@ struct HermesAgentApp: App {
                 .environment(appState)
                 .preferredColorScheme(.dark)
                 .tint(Theme.accent)
+                .dynamicIslandBadge()
         }
     }
 }

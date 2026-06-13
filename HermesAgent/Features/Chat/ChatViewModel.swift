@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import UIKit
 
-enum StreamingPhase {
+enum StreamingPhase: Equatable {
     case idle, connecting, thinking, running, writing
     var label: String {
         switch self {
