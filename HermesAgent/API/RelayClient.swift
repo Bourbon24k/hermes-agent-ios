@@ -21,6 +21,14 @@ enum RelayAPIError: LocalizedError {
     }
 }
 
+extension Error {
+    /// True when the failure is just a cancelled task (view dismissed,
+    /// pull-to-refresh re-fired) — these must not be shown as real errors.
+    var isCancellation: Bool {
+        self is CancellationError || (self as? URLError)?.code == .cancelled
+    }
+}
+
 /// Shared JSON coders with lenient ISO8601 date parsing (relay emits fractional seconds).
 enum RelayCoders {
     static func makeDecoder() -> JSONDecoder {
@@ -106,6 +114,8 @@ actor RelayClient {
         do {
             (data, response) = try await urlSession.data(for: req)
         } catch {
+            if error is CancellationError { throw CancellationError() }
+            if (error as? URLError)?.code == .cancelled { throw CancellationError() }
             throw RelayAPIError.unreachable
         }
         guard let http = response as? HTTPURLResponse else { throw RelayAPIError.unreachable }
@@ -170,7 +180,16 @@ actor RelayClient {
         if let body { req.setValue("application/json", forHTTPHeaderField: "content-type"); req.httpBody = try JSONEncoder().encode(body) }
 
         let data: Data, response: URLResponse
-        do { (data, response) = try await urlSession.data(for: req) } catch { throw RelayAPIError.unreachable }
+        do {
+            (data, response) = try await urlSession.data(for: req)
+        } catch {
+            // A cancelled request (view dismissed, pull-to-refresh re-triggered)
+            // is not a connectivity failure — surface it as cancellation so
+            // callers can silently ignore it instead of flashing "unreachable".
+            if error is CancellationError { throw CancellationError() }
+            if (error as? URLError)?.code == .cancelled { throw CancellationError() }
+            throw RelayAPIError.unreachable
+        }
         guard let http = response as? HTTPURLResponse else { throw RelayAPIError.unreachable }
         if http.statusCode == 401, retryOnAuth, session?.refreshToken != nil {
             try await refreshTokens()

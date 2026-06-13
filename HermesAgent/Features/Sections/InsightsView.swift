@@ -50,7 +50,7 @@ struct InsightsView: View {
 
     private func load() async {
         isLoading = true; errorText = nil
-        do { insights = try await appState.agent.insights() } catch { errorText = error.localizedDescription }
+        do { insights = try await appState.agent.insights() } catch { if !error.isCancellation { errorText = error.localizedDescription } }
         isLoading = false
     }
 }

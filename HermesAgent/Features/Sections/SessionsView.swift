@@ -134,7 +134,7 @@ struct SessionsView: View {
             Haptics.success()
             await load()
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
             Haptics.error()
         }
     }
@@ -145,7 +145,7 @@ struct SessionsView: View {
             sessions.removeAll { $0.id == session.id }
             Haptics.success()
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
             Haptics.error()
         }
         sessionToDelete = nil
@@ -226,7 +226,7 @@ struct SessionsView: View {
 
     private func load() async {
         isLoading = true; errorText = nil
-        do { sessions = try await appState.agent.sessions() } catch { errorText = error.localizedDescription }
+        do { sessions = try await appState.agent.sessions() } catch { if !error.isCancellation { errorText = error.localizedDescription } }
         isLoading = false
     }
 }

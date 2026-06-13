@@ -110,7 +110,7 @@ struct SkillsView: View {
 
     private func load() async {
         isLoading = true; errorText = nil
-        do { skills = try await appState.agent.skills() } catch { errorText = error.localizedDescription }
+        do { skills = try await appState.agent.skills() } catch { if !error.isCancellation { errorText = error.localizedDescription } }
         isLoading = false
     }
 }
@@ -235,7 +235,7 @@ struct SkillDetailSheet: View {
             fileContent = result.content
             if let err = result.error { errorText = err }
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
         }
         isLoading = false
     }
@@ -247,7 +247,7 @@ struct SkillDetailSheet: View {
             fileContent = editedContent
             isEditing = false
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
         }
         isSaving = false
     }
@@ -364,7 +364,7 @@ struct CreateSkillSheet: View {
             await onCreated()
             dismiss()
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
             Haptics.error()
         }
         isSaving = false

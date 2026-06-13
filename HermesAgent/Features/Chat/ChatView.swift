@@ -161,11 +161,14 @@ struct ChatView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
             }
+            .defaultScrollAnchor(.bottom)
             .scrollDismissesKeyboard(.immediately)
-            .onChange(of: viewModel.messages.last?.content) {
-                withAnimation(.easeOut(duration: 0.15)) { proxy.scrollTo("bottom", anchor: .bottom) }
-            }
             .onChange(of: viewModel.messages.count) {
+                withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) }
+            }
+            .onChange(of: viewModel.messages.last?.content) {
+                // Follow the streaming reply only when already near the bottom is
+                // handled by defaultScrollAnchor; this nudges the tail into view.
                 proxy.scrollTo("bottom", anchor: .bottom)
             }
         }

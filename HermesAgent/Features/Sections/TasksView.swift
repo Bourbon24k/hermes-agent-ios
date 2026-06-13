@@ -152,7 +152,7 @@ struct TasksView: View {
             try await appState.agent.createCronJob(name: name, prompt: prompt, schedule: schedule)
             await load()
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
         }
     }
 
@@ -161,13 +161,13 @@ struct TasksView: View {
             try await appState.agent.editCronJob(oldId: job.id, name: name, prompt: prompt, schedule: schedule)
             await load()
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
         }
     }
 
     private func load() async {
         isLoading = true; errorText = nil
-        do { jobs = try await appState.agent.cron() } catch { errorText = error.localizedDescription }
+        do { jobs = try await appState.agent.cron() } catch { if !error.isCancellation { errorText = error.localizedDescription } }
         isLoading = false
     }
 }

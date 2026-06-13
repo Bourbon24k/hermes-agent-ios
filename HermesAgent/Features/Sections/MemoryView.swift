@@ -201,7 +201,7 @@ struct MemoryView: View {
             editState = nil
             await load()
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
         }
     }
 
@@ -209,7 +209,7 @@ struct MemoryView: View {
 
     private func load() async {
         isLoading = true; errorText = nil
-        do { memory = try await appState.agent.memory() } catch { errorText = error.localizedDescription }
+        do { memory = try await appState.agent.memory() } catch { if !error.isCancellation { errorText = error.localizedDescription } }
         await loadExtraFiles()
         isLoading = false
     }

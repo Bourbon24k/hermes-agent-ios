@@ -47,7 +47,7 @@ final class ChatViewModel {
             apply(conversation)
             didInitialLoad = true
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
         }
         isLoading = false
     }
@@ -64,7 +64,7 @@ final class ChatViewModel {
             let conversation = try await api.clearConversation()
             apply(conversation)
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
         }
     }
 
@@ -78,7 +78,7 @@ final class ChatViewModel {
             apply(conversation)
             Haptics.success()
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
             Haptics.error()
         }
         isLoading = false
@@ -148,7 +148,7 @@ final class ChatViewModel {
             streamJob(jobId: jobId, assistantId: assistantId)
         } catch {
             isStreaming = false
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
             messages.removeAll { $0.id == assistantId }
         }
     }

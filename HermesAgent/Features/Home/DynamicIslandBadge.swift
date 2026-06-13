@@ -7,27 +7,22 @@ struct DynamicIslandBadge: View {
     var body: some View {
         HStack(spacing: 5) {
             Image(systemName: "bolt.fill")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(.white)
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(Theme.accent)
             Text("HERMES")
-                .font(.system(size: 12, weight: .heavy))
-                .foregroundStyle(.white)
-                .tracking(0.5)
+                .font(.system(size: 11, weight: .heavy))
+                .foregroundStyle(Theme.accent)
+                .tracking(1.0)
         }
         .padding(.horizontal, 11)
         .padding(.vertical, 5)
         .background(
-            Capsule().fill(
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.98, green: 0.62, blue: 0.20),
-                        Color(red: 0.93, green: 0.38, blue: 0.16),
-                    ],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                )
-            )
+            Capsule().fill(Color(white: 0.08))
         )
-        .shadow(color: .black.opacity(0.35), radius: 4, y: 1)
+        .overlay(
+            Capsule().strokeBorder(Theme.accent.opacity(0.35), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.4), radius: 5, y: 1)
     }
 }
 

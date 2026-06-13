@@ -375,7 +375,7 @@ struct ModelPickerSheet: View {
             currentModel = resp.current.model
             if let m = resp.current.model { appState.selectedModel = m }
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
         }
         isLoading = false
     }
@@ -390,7 +390,7 @@ struct ModelPickerSheet: View {
             Haptics.success()
             dismiss()
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
             Haptics.error()
         }
         switchingId = nil

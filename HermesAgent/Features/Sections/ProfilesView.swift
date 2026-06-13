@@ -115,7 +115,7 @@ struct ProfilesView: View {
 
     private func load() async {
         isLoading = true; errorText = nil
-        do { profiles = try await appState.agent.profiles() } catch { errorText = error.localizedDescription }
+        do { profiles = try await appState.agent.profiles() } catch { if !error.isCancellation { errorText = error.localizedDescription } }
         isLoading = false
     }
 
@@ -126,7 +126,7 @@ struct ProfilesView: View {
             Haptics.success()
             await load()
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
             Haptics.error()
         }
         activatingName = nil
@@ -138,7 +138,7 @@ struct ProfilesView: View {
             Haptics.success()
             await load()
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
             Haptics.error()
         }
     }
@@ -149,7 +149,7 @@ struct ProfilesView: View {
             Haptics.success()
             await load()
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
             Haptics.error()
         }
     }
@@ -160,7 +160,7 @@ struct ProfilesView: View {
             Haptics.success()
             await load()
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
             Haptics.error()
         }
         profileToDelete = nil

@@ -113,7 +113,7 @@ struct FilesView: View {
             entries = listing.entries
             path = listing.path
         } catch {
-            errorText = error.localizedDescription
+            if !error.isCancellation { errorText = error.localizedDescription }
         }
         isLoading = false
     }
@@ -161,7 +161,7 @@ struct FileContentView: View {
                     content = result.content
                     errorText = result.error.map { "Cannot open: \($0)" }
                 } catch {
-                    errorText = error.localizedDescription
+                    if !error.isCancellation { errorText = error.localizedDescription }
                 }
                 isLoading = false
             }

@@ -335,7 +335,7 @@ struct ThinkingView: View {
     /// Last few lines of reasoning for the GPT-style peek when collapsed.
     private var peekText: String {
         let lines = text.split(separator: "\n", omittingEmptySubsequences: true).map(String.init)
-        return lines.suffix(3).joined(separator: "\n")
+        return lines.suffix(6).joined(separator: "\n")
     }
 
     var body: some View {
@@ -403,7 +403,7 @@ struct ThinkingView: View {
                     .padding(.bottom, 12)
                     .id("peekEnd")
             }
-            .frame(height: 54)
+            .frame(height: 84)
             .mask(
                 LinearGradient(
                     colors: [.clear, .black, .black],

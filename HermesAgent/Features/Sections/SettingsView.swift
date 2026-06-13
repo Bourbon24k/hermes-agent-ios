@@ -253,13 +253,13 @@ struct SystemPromptEditor: View {
 
     private func load() async {
         isLoading = true
-        do { content = try await agent.systemPrompt() } catch { errorText = error.localizedDescription }
+        do { content = try await agent.systemPrompt() } catch { if !error.isCancellation { errorText = error.localizedDescription } }
         isLoading = false
     }
 
     private func save() async {
         isSaving = true; errorText = nil
-        do { try await agent.saveSystemPrompt(content); dismiss() } catch { errorText = error.localizedDescription }
+        do { try await agent.saveSystemPrompt(content); dismiss() } catch { if !error.isCancellation { errorText = error.localizedDescription } }
         isSaving = false
     }
 }
