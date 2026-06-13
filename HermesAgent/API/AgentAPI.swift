@@ -160,7 +160,8 @@ struct AgentAPI: Sendable {
     func sessions() async throws -> [AgentSession] {
         struct W: Decodable { let sessions: [AgentSession] }
         let w: W = try await client.agentGet("/agent/sessions")
-        return w.sessions
+        // Drop cron-task runs — they're automated and only clutter the list.
+        return w.sessions.filter { ($0.source ?? "").lowercased() != "cron" }
     }
 
     func messages(sessionId: String) async throws -> [AgentSessionMessage] {

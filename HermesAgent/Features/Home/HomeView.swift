@@ -3,6 +3,8 @@ import SwiftUI
 struct HomeView: View {
     @Environment(AppState.self) private var appState
     @State private var path = NavigationPath()
+    @State private var recentSessions: [AgentSession] = []
+    @State private var isLoadingSessions = true
 
     private enum Destination: Hashable {
         case chat, tasks, skills, memory, insights, profiles, sessions, files, settings
@@ -15,11 +17,13 @@ struct HomeView: View {
                     VStack(alignment: .leading, spacing: 22) {
                         header
                         menu
+                        sessionsSection
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 8)
                     .padding(.bottom, 90)
                 }
+                .refreshable { await loadSessions() }
 
                 chatButton.padding(.trailing, 20).padding(.bottom, 24)
             }
@@ -44,6 +48,7 @@ struct HomeView: View {
             path = NavigationPath()
             path.append(Destination.chat)
         }
+        .task { await loadSessions() }
         #if DEBUG
         .onAppear {
             if let dest = DebugLogin.debugOpenDestination {
@@ -108,6 +113,45 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: - Sessions
+
+    private var sessionsSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text("Sessions").font(.title3.weight(.bold)).foregroundStyle(Theme.textPrimary)
+                Spacer()
+                Button("See all") { path.append(Destination.sessions) }
+                    .font(.subheadline).foregroundStyle(Theme.accent)
+            }
+            .padding(.bottom, 6)
+
+            if isLoadingSessions && recentSessions.isEmpty {
+                ProgressView().tint(Theme.accent).frame(maxWidth: .infinity).padding(.top, 24)
+            } else if recentSessions.isEmpty {
+                Text("No sessions yet. Tap Chat to start.").font(.subheadline).foregroundStyle(Theme.textTertiary).padding(.top, 8)
+            }
+            ForEach(recentSessions.prefix(8)) { session in
+                Button { path.append(session) } label: { sessionRow(session) }.buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func sessionRow(_ session: AgentSession) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(alignment: .top) {
+                Text(session.shownTitle).font(.system(size: 16, weight: .medium)).foregroundStyle(Theme.textPrimary).lineLimit(1)
+                Spacer()
+                if let started = session.startedAt { Text(started.relativeShort).font(.system(size: 12)).foregroundStyle(Theme.textTertiary) }
+            }
+            HStack(spacing: 5) {
+                if let count = session.messageCount { Text("\(count) messages") }
+                if let model = session.model { Text("·"); Text(model).lineLimit(1) }
+            }
+            .font(.system(size: 13)).foregroundStyle(Theme.textTertiary)
+        }
+        .padding(.vertical, 10).frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     private var chatButton: some View {
         Button { path.append(Destination.chat) } label: {
             HStack(spacing: 8) {
@@ -117,5 +161,11 @@ struct HomeView: View {
             .foregroundStyle(.black).padding(.horizontal, 22).padding(.vertical, 14)
             .background(.white, in: Capsule()).shadow(color: .black.opacity(0.4), radius: 12, y: 4)
         }
+    }
+
+    private func loadSessions() async {
+        isLoadingSessions = true
+        recentSessions = (try? await appState.agent.sessions()) ?? []
+        isLoadingSessions = false
     }
 }
